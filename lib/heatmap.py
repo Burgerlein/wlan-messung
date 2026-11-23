@@ -305,7 +305,27 @@ def _flaeche(messwerte, b, h):
 # -- Ausgabe -----------------------------------------------------------
 
 
-def svg(messwerte, plan, deckkraft=0.58, kennung=""):
+def _raster(b, h, schritte=10):
+    """Gitternetz mit beschrifteten Anteilen - hilft beim Eintippen der Raeume."""
+    teile = []
+    for i in range(schritte + 1):
+        anteil = i / schritte
+        x, y = anteil * b, anteil * h
+        stark = i % 5 == 0
+        farbe_ = "#94a3b8" if stark else "#e2e8f0"
+        teile.append(f'<line x1="{x:.0f}" y1="0" x2="{x:.0f}" y2="{h}" '
+                     f'stroke="{farbe_}" stroke-width="{2 if stark else 1}"/>')
+        teile.append(f'<line x1="0" y1="{y:.0f}" x2="{b}" y2="{y:.0f}" '
+                     f'stroke="{farbe_}" stroke-width="{2 if stark else 1}"/>')
+        if i and i < schritte:
+            teile.append(f'<text x="{x:.0f}" y="16" text-anchor="middle" '
+                         f'font-size="13" fill="#64748b">{anteil:.1f}</text>')
+            teile.append(f'<text x="4" y="{y + 5:.0f}" font-size="13" '
+                         f'fill="#64748b">{anteil:.1f}</text>')
+    return "\n".join(teile)
+
+
+def svg(messwerte, plan, deckkraft=0.58, kennung="", mit_raster=False):
     """kennung macht die internen Bezeichner eindeutig, wenn mehrere
     Grafiken in derselben HTML-Seite liegen."""
     b, h = plan["breite"], plan["hoehe"]
@@ -334,6 +354,7 @@ font-family="-apple-system, system-ui, sans-serif">
     {maske}
   </defs>
   <rect width="{b}" height="{h}" fill="#f8fafc"/>
+  {_raster(b, h) if mit_raster else ""}
   {_huelle(plan, b, h)}
   {_raeume(plan, b, h)}
   {flaeche}
@@ -352,7 +373,7 @@ def _legende():
     )
 
 
-def zeichnen(messwerte, plan, titel, ziel, aktualisieren=0):
+def zeichnen(messwerte, plan, titel, ziel, aktualisieren=0, mit_raster=False):
     """Schreibt <ziel>.svg und <ziel>.html und gibt die HTML-Datei zurueck.
 
     aktualisieren: Sekunden, nach denen sich die Seite selbst neu laedt.
@@ -360,7 +381,7 @@ def zeichnen(messwerte, plan, titel, ziel, aktualisieren=0):
     """
     ziel = Path(ziel)
     ziel.parent.mkdir(parents=True, exist_ok=True)
-    inhalt = svg(messwerte, plan)
+    inhalt = svg(messwerte, plan, mit_raster=mit_raster)
 
     svg_pfad = ziel.with_suffix(".svg")
     svg_pfad.write_text(inhalt, encoding="utf-8")

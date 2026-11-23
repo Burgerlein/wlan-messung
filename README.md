@@ -68,23 +68,88 @@ FRITZBOX_USER=<Benutzername>
 FRITZBOX_PASSWORT=<Passwort>
 ```
 
-Den Grundriss beschreibt `grundriss/plan.json` als Rechtecke — die
-mitgelieferte Datei ist ein Beispiel, das du durch deine eigene Wohnung
-ersetzt. Dafür gibt es einen Editor im Browser:
+## Deinen Grundriss einrichten
+
+Der mitgelieferte Plan ist ein Beispiel. Bis deine eigene Wohnung drinsteht,
+sind es drei Schritte — Räume von Hand, alles andere im Browser.
+
+### 1. Räume eintragen
+
+Räume sind Rechtecke in `grundriss/plan.json`. Alle Werte sind **Anteile**
+zwischen 0 und 1, nicht Meter: `0` ist links beziehungsweise oben, `1` rechts
+beziehungsweise unten.
+
+```json
+{ "name": "Küche", "x1": 0.10, "y1": 0.07, "x2": 0.48, "y2": 0.31 }
+```
+
+Vorgehen, das sich bewährt hat:
+
+1. **Seitenverhältnis festlegen.** `"seitenverhaeltnis": 0.56` heißt, die
+   Wohnung ist etwa halb so breit wie lang. Grob schätzen genügt.
+2. **Gitternetz einblenden** und den Browser offen lassen:
+   ```bash
+   python3 wlanmess.py --karte --raster
+   open grundriss/messpunkte.html
+   ```
+   Das zeichnet ein beschriftetes Gitter in Zehntelschritten über den Plan.
+3. **Raum für Raum eintragen**, nach jedem Raum den Befehl erneut laufen
+   lassen und die Seite neu laden. Nach zwei, drei Räumen hat man das Gefühl
+   für die Zahlen.
+
+Du brauchst keinen Architektenplan. Es genügt, dass die Räume ungefähr richtig
+groß sind und richtig aneinandergrenzen — gemessen wird ja das Funkfeld, nicht
+die Wohnung.
+
+Nützliche Zusätze:
+
+| Feld | Wofür |
+|---|---|
+| `"extern": true` | Räume, die nicht zur Wohnung gehören (Treppenhaus) — werden grau |
+| `teilflaechen` | Bereiche innerhalb eines Raums, etwa ein Hochbett |
+| `dosen` | Netzwerkdosen, als Anhaltspunkt für Repeater-Standorte |
+| `geraete` | Router und Repeater |
+
+### 2. Messpunkte und Geräte setzen
 
 ```bash
 python3 wlanmess.py --bearbeiten
 ```
 
-Ziehen verschiebt Messpunkte, Doppelklick legt neue an, Geräte und Repeater
-lassen sich platzieren. Gespeichert wird direkt in `plan.json`.
+Öffnet einen Editor im Browser. Beim ersten Start liegt in jedem Raum
+automatisch ein Raster von Messpunkten — die ziehst du dorthin, wo du
+tatsächlich sitzt, stehst und telefonierst.
+
+- **Ziehen** verschiebt, **Doppelklick** legt einen neuen Punkt an,
+  **Entf** löscht
+- **Umbenennen** gibt sinnvolle Namen („am Herd" statt „Stelle 3 von 8")
+- **Obere Ebene** für Punkte auf einem Hochbett oder einer Galerie — damit
+  dürfen zwei Punkte an derselben Stelle liegen
+- Reiter **Feste Geräte**: Lautsprecher, Fernseher, Konsole platzieren, dazu
+  Router und Repeater verschieben
+
+Gespeichert wird direkt in `plan.json`.
+
+### 3. Später etwas ändern
+
+Verschiebst du Messpunkte nach einer Messung, passen alte Ergebnisse nicht
+mehr zu den neuen Positionen. Dafür gibt es:
+
+```bash
+python3 wlanmess.py --umhaengen messungen/<ordner>
+```
+
+Das ordnet jeden alten Messwert wieder dem richtigen Punkt zu — zuerst über
+den Namen, dann über die Entfernung. Was zu weit gewandert ist, bleibt
+unzugeordnet und wird genannt, statt stillschweigend falsch übernommen zu
+werden. Das Original wird vorher gesichert.
 
 ## Alle Aufrufe
 
 ```bash
 python3 wlanmess.py                      # Messmodi zur Auswahl
 python3 wlanmess.py --bearbeiten         # Messpunkte und Geräte im Browser
-python3 wlanmess.py --karte              # Messpunktkarte erzeugen
+python3 wlanmess.py --karte [--raster]   # Messpunktkarte, auf Wunsch mit Gitternetz
 python3 wlanmess.py --geraete            # wer hängt wo im Netz
 python3 wlanmess.py --funkkarte          # Karte aus festen Geräten
 python3 wlanmess.py --wache [min] [s]    # Netz beobachten, Ausfälle festhalten

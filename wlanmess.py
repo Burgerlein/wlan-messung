@@ -993,8 +993,11 @@ def main():
         return vergleich_zeigen(sys.argv[stelle + 1], sys.argv[stelle + 2])
     if "--karte" in sys.argv:
         plan = heatmap.plan_laden()
-        ziel = karte_schreiben(
-            plan["punkte"], plan, "Messpunkte", WURZEL / "grundriss" / "messpunkte.html"
+        raster = "--raster" in sys.argv
+        ziel = heatmap.zeichnen(
+            plan["punkte"], plan,
+            "Grundriss mit Gitternetz" if raster else "Messpunkte",
+            WURZEL / "grundriss" / "messpunkte.html", mit_raster=raster,
         )
         kopf("Karte erzeugt")
         zeile("Datei", ziel)
