@@ -222,7 +222,7 @@ python3 wlanmess.py --bearbeiten
 
 oder im Hauptmenü **Punkt 6**.
 
-![Grundriss mit nummerierten Messpunkten](bilder/messpunkte.png)
+![Der Editor im Browser](bilder/editor.png)
 
 Öffnet einen Editor im Browser mit drei Reitern.
 
@@ -301,6 +301,34 @@ python3 wlanmess.py --zuruecksetzen <o>  # Umhängen rückgängig machen
 python3 wlanmess.py --neu <ordner>       # Messung neu auswerten
 python3 wlanmess.py --standort           # Ortungsfreigabe anfordern
 ```
+
+## Häufige Fragen
+
+**Was passiert mit alten Messungen, wenn ich den Grundriss ändere?**
+Nichts. Jede Messung speichert den Grundriss mit, der zum Zeitpunkt der
+Messung galt, und zeigt ihn weiterhin. Erst `--umhaengen` schreibt in eine
+Messung — und legt vorher eine Sicherung an, die `--zuruecksetzen`
+zurückholt.
+
+**Warum sehe ich in der Vergleichsseite nur manche Läufe?**
+Vergleichbar sind nur Rundgänge (Modus 4), und nur solche mit denselben
+Messpunkten. Liegen zwei Läufe auf verschiedenen Rastern, hilft
+`--umhaengen`.
+
+**Muss ich bei jeder Messung alle Punkte abgehen?**
+Nein. Mit `s` überspringst du einen Punkt. Übersprungene bleiben leer und
+tauchen im Vergleich als „kein Messwert" auf, statt das Ergebnis zu
+verfälschen.
+
+**Werden meine Daten irgendwohin geschickt?**
+Nein. Alles bleibt auf dem Rechner, der Editor läuft auf `127.0.0.1`. Nach
+außen geht nur, was ohnehin im Heimnetz passiert: Abfragen an die FRITZ!Box
+und Pings an einen Namensserver, um die Internetstrecke zu messen.
+
+**Die Werte schwanken zwischen zwei Messungen am selben Ort.**
+Das ist normal, drei bis fünf dB Unterschied sind üblich — schon die eigene
+Körperhaltung wirkt sich aus. Vergleiche deshalb nie einzelne Punkte,
+sondern ganze Räume, und miss im selben Zustand (Akku oder Netzteil).
 
 ## Was noch kommt
 

@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import heatmap
+import stil
 
 WURZEL = Path(__file__).resolve().parent.parent
 PLANDATEI = WURZEL / "grundriss" / "plan.json"
@@ -24,7 +25,7 @@ def _seite(plan, funkgeraete=()):
     nur_rahmen = dict(plan, raeume=[], teilflaechen=[], geraete=[], dosen=[])
     hintergrund = heatmap.svg([], nur_rahmen, kennung="-plan",
                               vorlage=heatmap.vorlage_finden())
-    hintergrund = hintergrund.replace("<svg ", '<svg id="plan" ', 1)
+    hintergrund = hintergrund.replace("<svg ", '<svg id="plan" class="plan" ', 1)
     raeumeliste = json.dumps(
         [{"name": r["name"], "x1": r["x1"], "y1": r["y1"], "x2": r["x2"],
           "y2": r["y2"], "extern": bool(r.get("extern"))}
@@ -66,40 +67,20 @@ def _seite(plan, funkgeraete=()):
 <html lang="de">
 <meta charset="utf-8">
 <title>Messpunkte bearbeiten</title>
-<style>
-  body {{ font-family: -apple-system, system-ui, sans-serif; margin: 0;
-          background: #f4f4f5; color: #18181b; }}
-  header {{ padding: 18px 24px 8px; }}
-  h1 {{ font-size: 20px; margin: 0 0 4px; }}
-  p {{ margin: 0; color: #52525b; font-size: 13px; line-height: 1.6; }}
-  .leiste {{ display: flex; gap: 10px; align-items: center; padding: 12px 24px;
-             flex-wrap: wrap; }}
-  button {{ font-size: 14px; padding: 8px 15px; border-radius: 8px; cursor: pointer;
-            border: 1px solid #d4d4d8; background: #fff; }}
-  button.haupt {{ background: #18181b; color: #fff; border-color: #18181b; }}
-  button:disabled {{ opacity: .4; cursor: default; }}
-  #stand {{ font-size: 13px; color: #15803d; font-weight: 600; }}
-  .trenner {{ width: 1px; height: 24px; background: #d4d4d8; }}
-  .hinweisklein {{ font-size: 13px; color: #52525b; }}
-  .chip {{ display: inline-block; font-size: 12px; padding: 5px 10px; margin: 3px;
-           border-radius: 999px; border: 1px solid #d4d4d8; background: #fff;
-           cursor: pointer; }}
-  .chip.aktiv {{ background: #2563eb; color: #fff; border-color: #2563eb; }}
-  .geraet {{ cursor: grab; }}
-  .raum rect {{ cursor: move; }}
-  .raum.gewaehlt > rect:first-child {{ stroke: #2563eb; stroke-width: 8; }}
-  .griff {{ cursor: nwse-resize; }}
-  .geraet.gewaehlt rect {{ stroke: #2563eb; stroke-width: 4; }}
-  .flaeche {{ padding: 0 24px 40px; }}
-  svg {{ width: 100%; height: auto; max-width: 780px; display: block; background: #fff;
-         border-radius: 10px; box-shadow: 0 2px 14px rgba(0,0,0,.13);
-         touch-action: none; }}
+<style>{stil.CSS}
   .punkt {{ cursor: grab; }}
   .punkt.gewaehlt circle {{ stroke: #2563eb; stroke-width: 4; }}
   .punkt text {{ pointer-events: none; user-select: none; }}
+  .geraet {{ cursor: grab; }}
+  .geraet.gewaehlt rect {{ stroke: #2563eb; stroke-width: 4; }}
+  .raum rect {{ cursor: move; }}
+  .raum.gewaehlt > rect:first-child {{ stroke: #2563eb; stroke-width: 8; }}
+  .griff {{ cursor: nwse-resize; }}
+  svg {{ touch-action: none; }}
 </style>
+<div class="huelle">
 <header>
-  <h1>Messpunkte bearbeiten</h1>
+  <h1>Grundriss bearbeiten</h1>
   <p>
     <strong>Ziehen</strong> verschiebt einen Punkt &middot;
     <strong>Klick</strong> wählt ihn aus &middot;
@@ -110,10 +91,12 @@ def _seite(plan, funkgeraete=()):
     an derselben Stelle liegen, einer unten und einer oben.
   </p>
 </header>
-<div class="leiste">
-  <button id="modusRaeume">Räume</button>
-  <button id="modusPunkte" class="haupt">Messpunkte</button>
-  <button id="modusGeraete">Feste Geräte</button>
+<div class="leiste karte">
+  <div class="reiter">
+    <button id="modusRaeume">Räume</button>
+    <button id="modusPunkte" class="haupt">Messpunkte</button>
+    <button id="modusGeraete">Feste Geräte</button>
+  </div>
   <span class="trenner"></span>
   <button id="neu">Punkt hinzufügen</button>
   <button id="extern" disabled>Nicht zur Wohnung</button>
@@ -125,13 +108,13 @@ def _seite(plan, funkgeraete=()):
   <button id="zuruecksetzen">Zurücksetzen</button>
   <span id="stand"></span>
 </div>
-<div class="leiste" id="raeumeleiste" hidden>
+<div class="leiste karte" id="raeumeleiste" hidden>
   <span class="hinweisklein">Auf freier Fläche <strong>aufziehen</strong> legt
     einen Raum an &middot; <strong>ziehen</strong> verschiebt &middot; an der
     <strong>rechten unteren Ecke</strong> ziehen ändert die Größe</span>
   <span id="vorlageregler"></span>
 </div>
-<div class="leiste" id="geraeteleiste" hidden>
+<div class="leiste karte" id="geraeteleiste" hidden>
   <div style="width:100%">
     <p class="hinweisklein">FRITZ!Box und Repeater lassen sich direkt ziehen.
       Für die übrigen: Gerät anklicken, dann auf den Plan klicken.
@@ -142,7 +125,8 @@ def _seite(plan, funkgeraete=()):
       meist nicht sinnvoll</strong><div id="offeneMobil"></div></div>
   </div>
 </div>
-<div class="flaeche">{hintergrund}</div>
+<div class="karte" style="padding:10px">{hintergrund}</div>
+</div>
 <script>
 const RAEUME = {raeume};
 let punkte = {daten};
@@ -487,7 +471,7 @@ document.getElementById('speichern').onclick = async () => {{
     : 'Speichern fehlgeschlagen.');
 }};
 
-zeichnen();
+modusSetzen('punkte');
 </script>
 </html>
 """

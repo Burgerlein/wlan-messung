@@ -154,6 +154,18 @@ def _in_reichweite(messwerte, x, y):
     ) <= REICHWEITE
 
 
+def _im_raum(plan, x, y):
+    """Liegt die Stelle in einem Raum der Wohnung?
+
+    Farbe nur dort zu erzeugen, wo auch Wohnung ist, erspart den Verlass auf
+    den Zuschnitt - den setzen Browser unterschiedlich um.
+    """
+    for raum in wohnraeume(plan):
+        if raum["x1"] <= x <= raum["x2"] and raum["y1"] <= y <= raum["y2"]:
+            return True
+    return False
+
+
 # -- Grundriss ---------------------------------------------------------
 
 
@@ -277,7 +289,7 @@ def _punkte(messwerte, b, h):
     return "\n".join(teile)
 
 
-def _flaeche(messwerte, b, h):
+def _flaeche(messwerte, b, h, plan=None):
     """Die eingefaerbte Flaeche als viele kleine Rechtecke."""
     if not messwerte:
         return ""
@@ -290,6 +302,8 @@ def _flaeche(messwerte, b, h):
             x = (i + 0.5) * schritt_x
             y = (j + 0.5) * schritt_y
             if not _in_reichweite(messwerte, x, y):
+                continue
+            if plan is not None and not _im_raum(plan, x, y):
                 continue
             wert = _interpolieren(messwerte, x, y)
             if wert is None:
@@ -343,9 +357,11 @@ def svg(messwerte, plan, deckkraft=0.58, kennung="", mit_raster=False,
     b, h = plan["breite"], plan["hoehe"]
     weich, innen = f"weich{kennung}", f"innen{kennung}"
     gemessen = [m for m in messwerte if m.get("rssi") is not None]
+    # Zuschnitt aussen, Weichzeichner innen: andersherum verwischt der Browser
+    # die Farbe ueber die Raumkante hinaus.
     flaeche = (
-        f'<g filter="url(#{weich})" opacity="{deckkraft}" '
-        f'clip-path="url(#{innen})">\n{_flaeche(gemessen, b, h)}\n</g>'
+        f'<g clip-path="url(#{innen})" opacity="{deckkraft}">'
+        f'<g filter="url(#{weich})">\n{_flaeche(gemessen, b, h, plan)}\n</g></g>'
         if gemessen else ""
     )
     # Die Farbe gehoert in die Raeume, nicht in Waende oder nach draussen.

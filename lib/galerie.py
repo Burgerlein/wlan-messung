@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 import heatmap
+import stil
 
 WURZEL = Path(__file__).resolve().parent.parent
 ERGEBNISSE = WURZEL / "messungen"
@@ -117,58 +118,45 @@ def bauen(laeufe, ziel, uebersprungen=()):
 <html lang="de">
 <meta charset="utf-8">
 <title>WLAN-Messungen im Vergleich</title>
-<style>
-  body {{ font-family: -apple-system, system-ui, sans-serif; margin: 0;
-          background: #f4f4f5; color: #18181b; }}
-  header {{ padding: 22px 26px 10px; }}
-  h1 {{ font-size: 21px; margin: 0 0 4px; }}
-  .hinweis {{ color: #71717a; font-size: 13px; margin: 6px 0 0; }}
-  .steuerung {{ display: flex; gap: 26px; flex-wrap: wrap; padding: 6px 26px 14px; }}
-  .wahl {{ display: flex; flex-direction: column; gap: 5px; }}
-  .wahl label {{ font-size: 12px; font-weight: 600; color: #52525b;
-                 text-transform: uppercase; letter-spacing: .4px; }}
-  select {{ font-size: 14px; padding: 7px 10px; border-radius: 7px;
-            border: 1px solid #d4d4d8; background: #fff; min-width: 230px; }}
-  .legende {{ display: flex; gap: 13px; flex-wrap: wrap; padding: 0 26px 14px; }}
-  .feld {{ display: flex; align-items: center; gap: 5px; font-size: 12px; color: #52525b; }}
-  .feld i {{ width: 20px; height: 12px; border-radius: 3px; display: block; }}
-  .buehne {{ display: flex; gap: 22px; padding: 0 26px 26px; align-items: flex-start;
-             flex-wrap: wrap; }}
-  .spalte {{ flex: 1 1 340px; min-width: 300px; }}
-  .spalte h2 {{ font-size: 14px; margin: 0 0 8px; color: #3f3f46; font-weight: 600; }}
-  .karte {{ display: none; }}
-  .karte.sichtbar {{ display: block; }}
-  .karte svg {{ width: 100%; height: auto; border-radius: 10px; background: #fff;
-                box-shadow: 0 2px 12px rgba(0,0,0,.12); }}
-  .leer {{ padding: 0 26px 26px; color: #71717a; }}
-  table {{ border-collapse: collapse; width: 100%; font-size: 13px;
-           background: #fff; border-radius: 10px; overflow: hidden;
-           box-shadow: 0 2px 12px rgba(0,0,0,.08); }}
-  th, td {{ padding: 7px 11px; text-align: left; border-bottom: 1px solid #f4f4f5; }}
-  th {{ background: #fafafa; font-size: 11px; text-transform: uppercase;
-        letter-spacing: .4px; color: #71717a; }}
-  td.zahl {{ text-align: right; font-variant-numeric: tabular-nums; }}
-  .besser {{ color: #15803d; font-weight: 700; }}
-  .schlechter {{ color: #b91c1c; font-weight: 700; }}
-  .gleich {{ color: #a1a1aa; }}
-  .bilanz {{ padding: 0 26px 10px; font-size: 14px; color: #3f3f46; }}
-  .tabelle {{ padding: 0 26px 40px; }}
+<style>{stil.CSS}
+  .buehne {{ display: grid; gap: 18px; grid-template-columns: 1fr 1fr; }}
+  @media (max-width: 880px) {{ .buehne {{ grid-template-columns: 1fr; }} }}
+  .spalte h2 {{ font-size: 13px; margin: 0 0 9px; color: var(--leise);
+                font-weight: 600; text-transform: uppercase;
+                letter-spacing: .5px; }}
+  .karte.bild {{ padding: 10px; }}
+  .pane .karte {{ display: none; border: none; box-shadow: none;
+                  background: none; padding: 0; }}
+  .pane .karte.sichtbar {{ display: block; }}
+  .pane svg {{ width: 100%; height: auto; display: block;
+               border-radius: 11px; background: #fff; }}
+  .bilanz {{ padding: 14px 16px; margin: 18px 0 14px; font-size: 14.5px; }}
+  .leer {{ color: var(--leise); padding: 20px 0; }}
 </style>
+<div class="huelle">
 <header>
   <h1>WLAN-Messungen im Vergleich</h1>
+  <p>Links der frühere Stand, rechts der spätere. Darunter steht, was sich an
+     jedem Messpunkt geändert hat — <strong>positiv heißt besser geworden</strong>,
+     also stärkeres Signal.</p>
   {hinweis}
 </header>
-<div class="steuerung">
-  <div class="wahl"><label>Vorher</label><select id="links">{optionen}</select></div>
-  <div class="wahl"><label>Nachher</label><select id="rechts">{optionen}</select></div>
+<div class="leiste karte">
+  <div class="wahl"><label class="hinweisklein">Vorher</label><br>
+    <select id="links">{optionen}</select></div>
+  <div class="wahl"><label class="hinweisklein">Nachher</label><br>
+    <select id="rechts">{optionen}</select></div>
 </div>
-<div class="legende">{legende}<span class="feld">dBm</span></div>
+<div class="legende karte">{legende}<span class="feld">dBm</span></div>
 <div class="buehne">
-  <div class="spalte"><h2 id="titelLinks"></h2><div id="paneLinks">{inhalt}</div></div>
-  <div class="spalte"><h2 id="titelRechts"></h2><div id="paneRechts">{inhalt}</div></div>
+  <div class="spalte"><h2 id="titelLinks"></h2>
+    <div class="karte bild pane" id="paneLinks">{inhalt}</div></div>
+  <div class="spalte"><h2 id="titelRechts"></h2>
+    <div class="karte bild pane" id="paneRechts">{inhalt}</div></div>
 </div>
-<div class="bilanz" id="bilanz"></div>
-<div class="tabelle" id="tabelle"></div>
+<div class="bilanz karte" id="bilanz"></div>
+<div class="karte" id="tabelle"></div>
+</div>
 <script>
 const DATEN = {daten};
 
