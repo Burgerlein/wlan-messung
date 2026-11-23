@@ -14,10 +14,11 @@ Teams-Anrufen, bei denen Speedtest und Signalstärke unauffällig aussahen. Die
 Ursache war am Ende ein Repeater, dessen Netzwerkbuchse alle 40 Sekunden für
 vier Sekunden ausfiel — sichtbar nur, weil durchgehend mitgemessen wurde.
 
-[![Sechzig Sekunden: wie der Fall gelöst wurde](assets/brag.jpg)](assets/brag.mp4)
+https://github.com/user-attachments/assets/b680f544-7c8c-4f2b-903a-cd8e2767b1ba
 
-**[▶ Der ganze Fall in sechzig Sekunden](assets/brag.mp4)** — vom eingefrorenen
-Anruf über 40 Messpunkte bis zu den beiden Kabelabrissen im Protokoll.
+Der ganze Fall in sechzig Sekunden — vom eingefrorenen Anruf über 40 Messpunkte
+bis zu den beiden Kabelabrissen im Protokoll. Liegt auch als Datei bei:
+[`assets/brag.mp4`](assets/brag.mp4).
 
 ## Inhalt
 

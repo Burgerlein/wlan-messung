@@ -1,4 +1,4 @@
-# Bildmaterial
+# Bildmaterial und Video
 
 Alles hier ist **veröffentlichungsfertig**: Der Grundriss ist die
 Beispielwohnung, Gerätenamen und Netzwerkname sind ersetzt. Die Messwerte
@@ -11,6 +11,17 @@ selbst sind echt.
 | `heatmap.png` | Heatmap auf dem Grundriss, 40 Messpunkte |
 | `messpunkte.png` | derselbe Grundriss ohne Werte, nur die Punkte |
 | `editor.png` | der Editor im Browser |
+
+## Video
+
+| Datei | Inhalt |
+|---|---|
+| `brag.mp4` | der Fall in sechzig Sekunden, 1920×1080 |
+| `brag.jpg` | das Standbild dazu, für Plattformen mit eigenem Thumbnail |
+
+In der README laeuft der Film ueber einen GitHub-Anhang, nicht ueber diese
+Datei: Eine im Repo liegende Videodatei bekommt keinen Player. Die URL dazu
+steht in Burgerlein/wlan-messung#5.
 
 ## Konsole
 
