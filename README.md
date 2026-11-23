@@ -44,21 +44,94 @@ ein Problem im Funk liegt oder dahinter.
 | **Heatmap** | Geführt Punkt für Punkt, ergibt die Karte |
 | **Schnellblick** | Grobe Karte aus fest installierten Geräten, ohne zu laufen |
 
-So sieht eine Punktmessung aus:
+### So läuft eine Messung ab
 
 ```
-  Signal          ████·······  -71 dBm  (grenzwertig, Schwankung -73 bis -68)
-  Stoerabstand    18 dB  (grenzwertig)
-  Verbindung      5GHz, Kanal 48, 80MHz, 272 Mbit/s
-  Haengt an       fritz-repeater (5 GHz, Kanal 116)
-  Bis zur FRITZ!Box   kritisch   Paketverlust 25.3 % (zu hoch)
-  Bis ins Internet    kritisch   Paketverlust 25.3 % (zu hoch)
+$ python3 wlanmess.py
 
-  >>> Urteil fuer Videoanrufe: KRITISCH
+────────────────────────────────────────────────────────────────────────
+  WLAN-Messung
+────────────────────────────────────────────────────────────────────────
+  WLAN                     5GHz, Kanal 48, -63 dBm
+
+  Frage die FRITZ!Box ab ...
+
+────────────────────────────────────────────────────────────────────────
+  FRITZ!Box
+────────────────────────────────────────────────────────────────────────
+  Modell                   FRITZ!Box 7590 AX (FRITZ!OS 259.08.25)
+  Laufzeit                 13.9 Tage
+  WLAN 2.4GHz              Kanal 1, ax, SSID 'MeinWLAN'
+  WLAN 5GHz                Kanal 48, ax, SSID 'MeinWLAN'
+  Basis                    fritz.box (FRITZ!Box 7590 AX)
+  Kanalwahl                manual
+  Steuerung                an
+
+────────────────────────────────────────────────────────────────────────
+  Was soll gemessen werden?
+────────────────────────────────────────────────────────────────────────
+  1  Punktmessung  - an festen Orten stehen bleiben (genau)
+  2  Durchlauf     - durch die Wohnung laufen (findet Abrisse)
+  3  Nur Diagnose  - FRITZ!Box auslesen, nicht messen
+  4  Heatmap       - gefuehrt Punkt fuer Punkt, ergibt eine Karte
+  5  Schnellblick  - grobe Karte aus den festen Geraeten, ohne Laufen
+
+  6  Grundriss bearbeiten - Raeume zeichnen, Messpunkte und Geraete setzen
+
+  Auswahl [1-6]: 1
+
+────────────────────────────────────────────────────────────────────────
+  Punktmessung
+────────────────────────────────────────────────────────────────────────
+  Geh zu einem Ort, bleib stehen, gib den Namen ein.
+  Leere Eingabe beendet die Messung.
+
+  Ort (leer = fertig): Schreibtisch
+  Messe 15 Sekunden - bitte stehen bleiben ... fertig.
+
+  Signal                   █████·····  -61 dBm  (gut, Schwankung -63 bis -61)
+  Stoerabstand             28 dB  (gut)
+  Verbindung               5GHz, Kanal 48, 80MHz, 680 Mbit/s
+  Haengt an                fritz.box (5 GHz, Kanal 48)
+  Bis zur FRITZ!Box        gut        alle Werte im gruenen Bereich
+  Bis ins Internet         brauchbar  Schwankung 24.3 ms
+
+  >>> Urteil fuer Videoanrufe: BRAUCHBAR
 ```
 
-Grün, gelb und rot richten sich nach den Richtwerten für Videoanrufe. In eine
-Datei umgeleitet bleiben die Farbcodes weg.
+Signalstärken, Urteile und Befunde sind farbig — grün, gelb, rot nach den
+Richtwerten für Videoanrufe. Wird die Ausgabe in eine Datei oder durch eine
+Pipe geleitet, bleiben die Steuerzeichen weg.
+
+### Wenn etwas im Argen liegt
+
+```
+────────────────────────────────────────────────────────────────────────
+  Befunde
+────────────────────────────────────────────────────────────────────────
+
+  1. [kritisch] Das Geraet haengt zu lange am falschen Zugangspunkt
+     bei 62s erst bei -80 dBm von fritz.box auf fritz-repeater gewechselt
+     (danach -59 dBm); 2 Verbindungsabriss(e) von zusammen 8 Sekunden.
+     Massnahme: Bandsteuerung einschalten. Hilft das nicht genug, ist der
+     Abstand zwischen den Zugangspunkten zu gross.
+
+  2. [kritisch] Funkmodul auf radarpflichtigem Kanal
+     fritz-repeater (AP:5G:1) auf Kanal 116 mit 4 Geraet(en). Wird dort
+     ein Radarsignal erkannt, muss das Funkmodul sofort den Kanal wechseln
+     - alle daran haengenden Geraete fliegen raus.
+     Massnahme: Radarfrei sind nur 36, 40, 44 und 48.
+```
+
+### Die Wache findet, was die FRITZ!Box verschweigt
+
+```
+$ python3 wlanmess.py --wache 60
+
+  11:38:01  fritz-repeater AP:5G:1: KANALWECHSEL 100 -> 116
+  11:43:42  Kabel fritz-repeater: VERBINDUNG WEG
+  11:43:51  Kabel fritz-repeater: angesteckt (1000 Mbit an LAN:4)
+```
 
 Dazu eine **Wache**, die Ausfälle protokolliert, die die FRITZ!Box selbst nicht
 meldet, und ein **Kabeltest** für Netzwerkdosen — mit Kontrollmessung, damit
@@ -146,6 +219,8 @@ angezeigt, nie in einer Heatmap — und es bleibt lokal, der Editor läuft auf
 ```bash
 python3 wlanmess.py --bearbeiten
 ```
+
+oder im Hauptmenü **Punkt 6**.
 
 ![Grundriss mit nummerierten Messpunkten](bilder/messpunkte.png)
 

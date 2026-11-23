@@ -545,9 +545,11 @@ def hauptmenue():
     print("  4  Heatmap       - gefuehrt Punkt fuer Punkt, ergibt eine Karte")
     print("  5  Schnellblick  - grobe Karte aus den festen Geraeten, ohne Laufen")
     print()
+    print("  6  Grundriss bearbeiten - Raeume zeichnen, Messpunkte und Geraete setzen")
+    print()
     while True:
-        wahl = input("  Auswahl [1/2/3/4/5]: ").strip()
-        if wahl in ("1", "2", "3", "4", "5"):
+        wahl = input("  Auswahl [1-6]: ").strip()
+        if wahl in ("1", "2", "3", "4", "5", "6"):
             return wahl
 
 
@@ -1036,10 +1038,19 @@ def main():
     wahl = hauptmenue()
     if wahl == "5":
         return funkkarte_zeigen()
+    if wahl == "6":
+        kopf("Grundriss bearbeiten")
+        print("  Reiter 'Raeume': aufziehen legt an, ziehen verschiebt, die rechte")
+        print("  untere Ecke aendert die Groesse.")
+        print("  Ein Foto unter grundriss/vorlage.jpg wird zum Abzeichnen eingeblendet.")
+        print("  Strg-C beendet den Editor.\n")
+        editor.starten()
+        return 0
     lauf = {
         "gestartet": datetime.now().isoformat(timespec="seconds"),
         "modus": {"1": "Punktmessung", "2": "Durchlauf", "3": "Diagnose",
-                  "4": "Heatmap", "5": "Schnellblick"}[wahl],
+                  "4": "Heatmap", "5": "Schnellblick",
+                  "6": "Grundriss"}[wahl],
         "punkte": [],
         "verlauf": {},
     }
