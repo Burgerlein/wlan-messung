@@ -14,11 +14,10 @@ Teams-Anrufen, bei denen Speedtest und Signalstärke unauffällig aussahen. Die
 Ursache war am Ende ein Repeater, dessen Netzwerkbuchse alle 40 Sekunden für
 vier Sekunden ausfiel — sichtbar nur, weil durchgehend mitgemessen wurde.
 
-![Heatmap der WLAN-Versorgung auf dem Grundriss](bilder/heatmap.png)
+[![Sechzig Sekunden: wie der Fall gelöst wurde](assets/brag.jpg)](assets/brag.mp4)
 
-Am Messpunkt steht die Signalstärke, die Fläche dazwischen wird interpoliert.
-Punkte auf einer zweiten Ebene — Hochbett, Galerie — bekommen einen
-gestrichelten Ring, fest installierte Geräte ein Quadrat statt eines Kreises.
+**[▶ Der ganze Fall in sechzig Sekunden](assets/brag.mp4)** — vom eingefrorenen
+Anruf über 40 Messpunkte bis zu den beiden Kabelabrissen im Protokoll.
 
 ## Inhalt
 
@@ -56,6 +55,12 @@ ein Problem im Funk liegt oder dahinter.
 | **Diagnose** | Nur die FRITZ!Box auslesen |
 | **Heatmap** | Geführt Punkt für Punkt, ergibt die Karte |
 | **Schnellblick** | Grobe Karte aus fest installierten Geräten, ohne zu laufen |
+
+![Heatmap der WLAN-Versorgung auf dem Grundriss](assets/heatmap.png)
+
+Am Messpunkt steht die Signalstärke, die Fläche dazwischen wird interpoliert.
+Punkte auf einer zweiten Ebene — Hochbett, Galerie — bekommen einen
+gestrichelten Ring, fest installierte Geräte ein Quadrat statt eines Kreises.
 
 ### So läuft eine Messung ab
 
@@ -235,7 +240,7 @@ python3 wlanmess.py --bearbeiten
 
 oder im Hauptmenü **Punkt 6**.
 
-![Der Editor im Browser](bilder/editor.png)
+![Der Editor im Browser](assets/editor.png)
 
 Öffnet einen Editor im Browser mit drei Reitern.
 
