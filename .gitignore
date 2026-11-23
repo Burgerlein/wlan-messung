@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+bin/
+messungen/
+grundriss/messpunkte.*
+grundriss/funkkarte.*

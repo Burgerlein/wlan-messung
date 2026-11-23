@@ -1,0 +1,104 @@
+{
+  "titel": "Beispielwohnung",
+  "seitenverhaeltnis": 0.7,
+  "hinweis": "Beispiel. Ersetze die Raeume durch deine Wohnung - am einfachsten mit 'python3 wlanmess.py --bearbeiten'. Alle Werte sind Anteile von Breite bzw. Hoehe (0 bis 1).",
+  "huelle": [
+    [
+      0.06,
+      0.06
+    ],
+    [
+      0.94,
+      0.06
+    ],
+    [
+      0.94,
+      0.94
+    ],
+    [
+      0.06,
+      0.94
+    ]
+  ],
+  "raeume": [
+    {
+      "name": "Küche",
+      "x1": 0.08,
+      "y1": 0.08,
+      "x2": 0.44,
+      "y2": 0.36
+    },
+    {
+      "name": "Wohnzimmer",
+      "x1": 0.48,
+      "y1": 0.08,
+      "x2": 0.92,
+      "y2": 0.48
+    },
+    {
+      "name": "Flur",
+      "x1": 0.08,
+      "y1": 0.4,
+      "x2": 0.44,
+      "y2": 0.6
+    },
+    {
+      "name": "Bad",
+      "x1": 0.48,
+      "y1": 0.52,
+      "x2": 0.68,
+      "y2": 0.72
+    },
+    {
+      "name": "Schlafzimmer",
+      "x1": 0.72,
+      "y1": 0.52,
+      "x2": 0.92,
+      "y2": 0.92
+    },
+    {
+      "name": "Arbeitszimmer",
+      "x1": 0.08,
+      "y1": 0.64,
+      "x2": 0.44,
+      "y2": 0.92
+    },
+    {
+      "name": "Abstellraum",
+      "x1": 0.48,
+      "y1": 0.76,
+      "x2": 0.68,
+      "y2": 0.92
+    }
+  ],
+  "geraete": [
+    {
+      "name": "FRITZ!Box",
+      "x": 0.26,
+      "y": 0.5,
+      "art": "router"
+    },
+    {
+      "name": "Repeater",
+      "x": 0.8,
+      "y": 0.3,
+      "art": "repeater"
+    }
+  ],
+  "dosen": [
+    {
+      "wo": "hinter der FRITZ!Box",
+      "x": 0.24,
+      "y": 0.52
+    }
+  ],
+  "sonderpunkte": [
+    {
+      "raum": "Küche",
+      "wo": "hinter dem Kühlschrank",
+      "x": 0.14,
+      "y": 0.3
+    }
+  ],
+  "rasterabstand": 0.13
+}
