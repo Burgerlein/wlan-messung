@@ -20,6 +20,19 @@ Am Messpunkt steht die Signalstärke, die Fläche dazwischen wird interpoliert.
 Punkte auf einer zweiten Ebene — Hochbett, Galerie — bekommen einen
 gestrichelten Ring, fest installierte Geräte ein Quadrat statt eines Kreises.
 
+## Inhalt
+
+| | |
+|---|---|
+| [Was es misst](#was-es-misst) | Signalstärke, Paketverlust, FRITZ!Box-Daten |
+| [Messmodi](#messmodi) | fünf Arten zu messen, mit Beispielausgaben |
+| [Voraussetzungen](#voraussetzungen) | macOS, FRITZ!Box, sonst nichts |
+| [Einrichtung](#einrichtung) | `.env` anlegen, loslegen |
+| [Deinen Grundriss einrichten](#deinen-grundriss-einrichten) | Räume zeichnen, Messpunkte setzen |
+| [Alle Aufrufe](#alle-aufrufe) | die Befehlsübersicht |
+| [Häufige Fragen](#häufige-fragen) | was mit alten Messungen passiert, wohin Daten gehen |
+| [Was noch kommt](#was-noch-kommt) · [Was es nicht kann](#was-es-nicht-kann) | Roadmap und Grenzen |
+
 ## Was es misst
 
 **Vom Mac**, im Sekundentakt: Signalstärke, Rauschen, Störabstand, Band, Kanal,
