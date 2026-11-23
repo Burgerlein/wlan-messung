@@ -19,9 +19,19 @@ PLANDATEI = WURZEL / "grundriss" / "plan.json"
 def _seite(plan, funkgeraete=()):
     punkte = plan["punkte"]
     b, h = plan["breite"], plan["hoehe"]
-    # Grundriss ohne Messpunkte - die zeichnet der Browser, damit sie beweglich sind
-    hintergrund = heatmap.svg([], plan, kennung="-plan")
+    # Nur Huelle und Vorlage kommen fertig vom Server. Raeume, Messpunkte und
+    # Geraete zeichnet der Browser, damit sich Aenderungen sofort zeigen.
+    nur_rahmen = dict(plan, raeume=[], teilflaechen=[], geraete=[], dosen=[])
+    hintergrund = heatmap.svg([], nur_rahmen, kennung="-plan",
+                              vorlage=heatmap.vorlage_finden())
     hintergrund = hintergrund.replace("<svg ", '<svg id="plan" ', 1)
+    raeumeliste = json.dumps(
+        [{"name": r["name"], "x1": r["x1"], "y1": r["y1"], "x2": r["x2"],
+          "y2": r["y2"], "extern": bool(r.get("extern"))}
+         for r in plan.get("raeume", [])],
+        ensure_ascii=False,
+    )
+    hat_vorlage = "true" if heatmap.vorlage_finden() else "false"
 
     daten = json.dumps(
         [{"raum": p["raum"], "wo": p["wo"], "x": p["x"], "y": p["y"],
@@ -76,6 +86,9 @@ def _seite(plan, funkgeraete=()):
            cursor: pointer; }}
   .chip.aktiv {{ background: #2563eb; color: #fff; border-color: #2563eb; }}
   .geraet {{ cursor: grab; }}
+  .raum rect {{ cursor: move; }}
+  .raum.gewaehlt > rect:first-child {{ stroke: #2563eb; stroke-width: 8; }}
+  .griff {{ cursor: nwse-resize; }}
   .geraet.gewaehlt rect {{ stroke: #2563eb; stroke-width: 4; }}
   .flaeche {{ padding: 0 24px 40px; }}
   svg {{ width: 100%; height: auto; max-width: 780px; display: block; background: #fff;
@@ -98,10 +111,12 @@ def _seite(plan, funkgeraete=()):
   </p>
 </header>
 <div class="leiste">
+  <button id="modusRaeume">Räume</button>
   <button id="modusPunkte" class="haupt">Messpunkte</button>
   <button id="modusGeraete">Feste Geräte</button>
   <span class="trenner"></span>
   <button id="neu">Punkt hinzufügen</button>
+  <button id="extern" disabled>Nicht zur Wohnung</button>
   <button id="umbenennen" disabled>Umbenennen</button>
   <button id="ebene" disabled>Obere Ebene an/aus</button>
   <button id="loeschen" disabled>Löschen</button>
@@ -109,6 +124,12 @@ def _seite(plan, funkgeraete=()):
   <button class="haupt" id="speichern">Speichern</button>
   <button id="zuruecksetzen">Zurücksetzen</button>
   <span id="stand"></span>
+</div>
+<div class="leiste" id="raeumeleiste" hidden>
+  <span class="hinweisklein">Auf freier Fläche <strong>aufziehen</strong> legt
+    einen Raum an &middot; <strong>ziehen</strong> verschiebt &middot; an der
+    <strong>rechten unteren Ecke</strong> ziehen ändert die Größe</span>
+  <span id="vorlageregler"></span>
 </div>
 <div class="leiste" id="geraeteleiste" hidden>
   <div style="width:100%">
@@ -127,8 +148,10 @@ const RAEUME = {raeume};
 let punkte = {daten};
 let geraete = {geraeteliste};
 let infra = {infraliste};
+let raeume = {raeumeliste};
+const HAT_VORLAGE = {hat_vorlage};
 const anfang = JSON.parse(JSON.stringify(
-  {{ punkte: punkte, geraete: geraete, infra: infra }}));
+  {{ punkte: punkte, geraete: geraete, infra: infra, raeume: raeume }}));
 let modus = 'punkte', gewaehlt = null, gewaehltArt = 'punkt';
 let zieht = null, chipGeraet = null;
 
@@ -153,8 +176,34 @@ function beschriftung(x, y, text, groesse) {{
 
 function zeichnen() {{
   ebene.innerHTML = '';
-  const blass = modus === 'geraete' ? 0.3 : 1;
+  const imRaummodus = modus === 'raeume';
 
+  raeume.forEach((r, i) => {{
+    const x = r.x1 * B, y = r.y1 * H;
+    const breite = (r.x2 - r.x1) * B, hoehe = (r.y2 - r.y1) * H;
+    const g = el('g', {{ class: 'raum' + (imRaummodus && gewaehltArt === 'raum'
+                         && i === gewaehlt ? ' gewaehlt' : '') }});
+    g.dataset.r = i;
+    g.append(el('rect', {{
+      x: x, y: y, width: Math.max(0, breite), height: Math.max(0, hoehe),
+      fill: r.extern ? '#e4e4e7' : (imRaummodus ? '#eff6ff' : '#fbfbfc'),
+      'fill-opacity': HAT_VORLAGE && !imRaummodus ? 0.55 : 1,
+      stroke: '#374151', 'stroke-width': 6 }}));
+    const schrift = Math.min(21, Math.max(11, breite / (r.name.length * 1.0)));
+    const t = el('text', {{ x: x + breite / 2, y: y + schrift + 7,
+      'text-anchor': 'middle', 'font-size': schrift, 'font-weight': 600,
+      fill: r.extern ? '#a1a1aa' : '#6b7280' }});
+    t.textContent = r.name.toUpperCase();
+    g.append(t);
+    if (imRaummodus) {{
+      g.append(el('rect', {{ class: 'griff', x: x + breite - 11, y: y + hoehe - 11,
+        width: 22, height: 22, rx: 4, fill: '#2563eb', stroke: '#fff',
+        'stroke-width': 2 }}));
+    }}
+    ebene.appendChild(g);
+  }});
+
+  const blass = modus === 'punkte' ? 1 : 0.3;
   punkte.forEach((p, i) => {{
     const obenauf = p.ebene === 'oben';
     const g = el('g', {{ class: 'punkt' + (modus === 'punkte' && gewaehltArt === 'punkt'
@@ -200,9 +249,11 @@ function zeichnen() {{
 
   const etwasGewaehlt = gewaehlt !== null;
   document.getElementById('umbenennen').disabled =
-    !(etwasGewaehlt && gewaehltArt === 'punkt');
+    !(etwasGewaehlt && (gewaehltArt === 'punkt' || gewaehltArt === 'raum'));
   document.getElementById('ebene').disabled =
     !(etwasGewaehlt && gewaehltArt === 'punkt');
+  document.getElementById('extern').disabled =
+    !(etwasGewaehlt && gewaehltArt === 'raum');
   document.getElementById('loeschen').disabled =
     !etwasGewaehlt || gewaehltArt === 'infra';
   document.getElementById('neu').disabled = modus !== 'punkte';
@@ -212,6 +263,7 @@ function zeichnen() {{
 function chips() {{
   const fest = document.getElementById('offeneFest');
   const mobil = document.getElementById('offeneMobil');
+  if (!fest || !mobil) return;
   fest.innerHTML = ''; mobil.innerHTML = '';
   geraete.forEach((d, i) => {{
     if (d.x !== null && d.x !== undefined) return;
@@ -238,9 +290,33 @@ function listeVon(art) {{
   return art === 'punkt' ? punkte : art === 'infra' ? infra : geraete;
 }}
 
+let zieheRaum = null;   // {{ art: 'neu'|'verschieben'|'groesse', start, anfang }}
+
 svg.addEventListener('pointerdown', e => {{
+  const o = stelle(e);
+
+  if (modus === 'raeume') {{
+    const griff = e.target.closest('.griff');
+    const raum = e.target.closest('.raum');
+    if (griff && raum) {{
+      gewaehlt = +raum.dataset.r; gewaehltArt = 'raum';
+      zieheRaum = {{ art: 'groesse' }};
+    }} else if (raum) {{
+      gewaehlt = +raum.dataset.r; gewaehltArt = 'raum';
+      const r = raeume[gewaehlt];
+      zieheRaum = {{ art: 'verschieben', start: o,
+                    anfang: {{ x1: r.x1, y1: r.y1, x2: r.x2, y2: r.y2 }} }};
+    }} else {{
+      raeume.push({{ name: 'Neuer Raum', x1: o.x, y1: o.y, x2: o.x, y2: o.y,
+                    extern: false }});
+      gewaehlt = raeume.length - 1; gewaehltArt = 'raum';
+      zieheRaum = {{ art: 'neu', start: o }};
+    }}
+    svg.setPointerCapture(e.pointerId); zeichnen(); melden(''); e.preventDefault();
+    return;
+  }}
+
   if (modus === 'geraete' && chipGeraet !== null) {{
-    const o = stelle(e);
     geraete[chipGeraet].x = o.x; geraete[chipGeraet].y = o.y;
     gewaehlt = chipGeraet; gewaehltArt = 'geraet'; chipGeraet = null;
     zeichnen(); melden(''); return;
@@ -257,27 +333,61 @@ svg.addEventListener('pointerdown', e => {{
   zieht = gewaehlt;
   svg.setPointerCapture(e.pointerId); zeichnen(); e.preventDefault();
 }});
+
 svg.addEventListener('pointermove', e => {{
-  if (zieht === null) return;
   const o = stelle(e);
+  if (zieheRaum) {{
+    const r = raeume[gewaehlt];
+    if (zieheRaum.art === 'neu' || zieheRaum.art === 'groesse') {{
+      const anker = zieheRaum.art === 'neu'
+        ? zieheRaum.start : {{ x: r.x1, y: r.y1 }};
+      r.x1 = +Math.min(anker.x, o.x).toFixed(4);
+      r.y1 = +Math.min(anker.y, o.y).toFixed(4);
+      r.x2 = +Math.max(anker.x, o.x).toFixed(4);
+      r.y2 = +Math.max(anker.y, o.y).toFixed(4);
+    }} else {{
+      const dx = o.x - zieheRaum.start.x, dy = o.y - zieheRaum.start.y;
+      const a = zieheRaum.anfang;
+      r.x1 = +(a.x1 + dx).toFixed(4); r.x2 = +(a.x2 + dx).toFixed(4);
+      r.y1 = +(a.y1 + dy).toFixed(4); r.y2 = +(a.y2 + dy).toFixed(4);
+    }}
+    zeichnen(); melden(''); return;
+  }}
+  if (zieht === null) return;
   const liste = listeVon(gewaehltArt);
   liste[zieht].x = o.x; liste[zieht].y = o.y;
   zeichnen(); melden('');
 }});
+
 svg.addEventListener('pointerup', e => {{
+  if (zieheRaum) {{
+    const r = raeume[gewaehlt];
+    if (zieheRaum.art === 'neu') {{
+      if ((r.x2 - r.x1) < 0.03 || (r.y2 - r.y1) < 0.03) {{
+        raeume.pop(); gewaehlt = null;      // zu klein, war wohl ein Fehlklick
+      }} else {{
+        const name = prompt('Wie heisst der Raum?', 'Neuer Raum');
+        if (name) r.name = name; else raeume.pop(), gewaehlt = null;
+      }}
+    }}
+    zieheRaum = null; svg.releasePointerCapture(e.pointerId); zeichnen(); return;
+  }}
   if (zieht !== null) {{ zieht = null; svg.releasePointerCapture(e.pointerId); }}
 }});
+
 svg.addEventListener('dblclick', e => {{
   if (modus !== 'punkte' || e.target.closest('.punkt')) return;
   punktAnlegen(stelle(e));
 }});
 
 function punktAnlegen(o) {{
-  const raum = prompt('In welchem Raum liegt der Punkt?\\n\\n' + RAEUME.join(', '), RAEUME[0]);
+  const liste = raeume.filter(r => !r.extern).map(r => r.name);
+  const raum = prompt('In welchem Raum liegt der Punkt?\\n\\n' + liste.join(', '),
+                      liste[0] || '');
   if (!raum) return;
   const wo = prompt('Wie heisst die Stelle? (z.B. "am Herd")', '') || '';
   punkte.push({{ raum: raum, wo: wo, x: o.x, y: o.y }});
-  gewaehlt = punkte.length - 1; zeichnen(); melden('');
+  gewaehlt = punkte.length - 1; gewaehltArt = 'punkt'; zeichnen(); melden('');
 }}
 
 document.getElementById('neu').onclick = () => punktAnlegen({{ x: 0.5, y: 0.5 }});
@@ -290,38 +400,57 @@ document.addEventListener('keydown', e => {{
 function loeschen() {{
   if (gewaehlt === null) return;
   if (gewaehltArt === 'punkt') punkte.splice(gewaehlt, 1);
+  else if (gewaehltArt === 'raum') raeume.splice(gewaehlt, 1);
   else if (gewaehltArt === 'geraet') {{
     geraete[gewaehlt].x = null; geraete[gewaehlt].y = null;
   }} else return;        // FRITZ!Box und Repeater gehoeren immer auf den Plan
   gewaehlt = null; zeichnen(); melden('');
 }}
 document.getElementById('loeschen').onclick = loeschen;
+document.getElementById('extern').onclick = () => {{
+  const r = raeume[gewaehlt];
+  r.extern = !r.extern; zeichnen(); melden('');
+}};
 document.getElementById('ebene').onclick = () => {{
   const p = punkte[gewaehlt];
   p.ebene = p.ebene === 'oben' ? '' : 'oben';
   zeichnen(); melden('');
 }};
 document.getElementById('umbenennen').onclick = () => {{
-  const p = punkte[gewaehlt];
-  const raum = prompt('Raum:', p.raum); if (raum === null) return;
-  const wo = prompt('Stelle:', p.wo); if (wo === null) return;
-  p.raum = raum; p.wo = wo; zeichnen(); melden('');
+  if (gewaehltArt === 'raum') {{
+    const name = prompt('Wie heisst der Raum?', raeume[gewaehlt].name);
+    if (name) raeume[gewaehlt].name = name;
+  }} else {{
+    const p = punkte[gewaehlt];
+    const raum = prompt('Raum:', p.raum); if (raum === null) return;
+    const wo = prompt('Stelle:', p.wo); if (wo === null) return;
+    p.raum = raum; p.wo = wo;
+  }}
+  zeichnen(); melden('');
 }};
 document.getElementById('zuruecksetzen').onclick = () => {{
   const k = JSON.parse(JSON.stringify(anfang));
-  punkte = k.punkte; geraete = k.geraete; infra = k.infra;
+  punkte = k.punkte; geraete = k.geraete; infra = k.infra; raeume = k.raeume;
   gewaehlt = null; chipGeraet = null;
   zeichnen(); melden('Zurückgesetzt - noch nicht gespeichert.');
 }};
 
 function modusSetzen(neu) {{
   modus = neu; gewaehlt = null; chipGeraet = null;
-  gewaehltArt = neu === 'punkte' ? 'punkt' : 'geraet';
-  document.getElementById('modusPunkte').classList.toggle('haupt', neu === 'punkte');
-  document.getElementById('modusGeraete').classList.toggle('haupt', neu === 'geraete');
+  gewaehltArt = neu === 'punkte' ? 'punkt' : neu === 'raeume' ? 'raum' : 'geraet';
+  for (const [knopf, name] of [['modusRaeume', 'raeume'],
+                               ['modusPunkte', 'punkte'],
+                               ['modusGeraete', 'geraete']]) {{
+    document.getElementById(knopf).classList.toggle('haupt', neu === name);
+  }}
+  document.getElementById('raeumeleiste').hidden = neu !== 'raeume';
   document.getElementById('geraeteleiste').hidden = neu !== 'geraete';
   zeichnen();
 }}
+document.getElementById('modusRaeume').onclick = () => modusSetzen('raeume');
+document.getElementById('modusPunkte').onclick = () => modusSetzen('punkte');
+document.getElementById('modusGeraete').onclick = () => modusSetzen('geraete');
+
 document.getElementById('neuSuchen').onclick = async () => {{
   melden('Suche ...');
   const antwort = await fetch('/geraete');
@@ -339,8 +468,6 @@ document.getElementById('neuSuchen').onclick = async () => {{
   gewaehlt = null; chipGeraet = null; zeichnen();
   melden(geraete.length + ' Geräte gefunden.');
 }};
-document.getElementById('modusPunkte').onclick = () => modusSetzen('punkte');
-document.getElementById('modusGeraete').onclick = () => modusSetzen('geraete');
 
 function melden(text) {{ document.getElementById('stand').textContent = text; }}
 
@@ -351,10 +478,12 @@ document.getElementById('speichern').onclick = async () => {{
   }});
   const antwort = await fetch('/speichern', {{
     method: 'POST', headers: {{ 'Content-Type': 'application/json' }},
-    body: JSON.stringify({{ punkte: punkte, geraete: stellen, infra: infra }})
+    body: JSON.stringify({{ punkte: punkte, geraete: stellen, infra: infra,
+                           raeume: raeume }})
   }});
   melden(antwort.ok
-    ? punkte.length + ' Punkte und ' + Object.keys(stellen).length + ' Geräte gespeichert.'
+    ? raeume.length + ' Räume, ' + punkte.length + ' Punkte und '
+      + Object.keys(stellen).length + ' Geräte gespeichert.'
     : 'Speichern fehlgeschlagen.');
 }};
 
@@ -377,6 +506,23 @@ def _speichern(nutzlast):
         name: {"x": round(float(s["x"]), 4), "y": round(float(s["y"]), 4)}
         for name, s in (nutzlast.get("geraete") or {}).items()
     }
+    raeume = nutzlast.get("raeume")
+    if raeume is not None:
+        alt = {r["name"]: r for r in plan.get("raeume", [])}
+        neue = []
+        for r in raeume:
+            x1, x2 = sorted((round(float(r["x1"]), 4), round(float(r["x2"]), 4)))
+            y1, y2 = sorted((round(float(r["y1"]), 4), round(float(r["y2"]), 4)))
+            eintrag = {"name": r["name"], "x1": x1, "y1": y1, "x2": x2, "y2": y2}
+            if r.get("extern"):
+                eintrag["extern"] = True
+            neue.append(eintrag)
+        plan["raeume"] = neue
+        # Teilflaechen eines geloeschten Raums mitnehmen
+        namen = {r["name"] for r in neue}
+        plan["teilflaechen"] = [t for t in plan.get("teilflaechen", [])
+                                if t.get("raum") in namen]
+
     stellen = {d["name"]: d for d in (nutzlast.get("infra") or [])}
     for geraet in plan.get("geraete", []):
         neu = stellen.get(geraet["name"])
@@ -385,7 +531,8 @@ def _speichern(nutzlast):
             geraet["y"] = round(float(neu["y"]), 4)
     PLANDATEI.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n",
                          encoding="utf-8")
-    return len(plan["punkte"]), len(plan["geraete_positionen"])
+    return (len(plan["punkte"]), len(plan["geraete_positionen"]),
+            len(plan.get("raeume", [])))
 
 
 def geraete_holen():
@@ -468,7 +615,7 @@ def starten(port=8765, melden=print, browser_oeffnen=True):
             laenge = int(self.headers.get("Content-Length", 0))
             try:
                 nutzlast = json.loads(self.rfile.read(laenge).decode("utf-8"))
-                punkte, stellen = _speichern(nutzlast)
+                punkte, stellen, raeume = _speichern(nutzlast)
             except (ValueError, KeyError, TypeError, OSError) as fehler:
                 self.send_response(400)
                 self.end_headers()
@@ -476,7 +623,8 @@ def starten(port=8765, melden=print, browser_oeffnen=True):
                 return
             self.send_response(200)
             self.end_headers()
-            melden(f"  {punkte} Punkte und {stellen} Geraete gespeichert.")
+            melden(f"  {raeume} Raeume, {punkte} Punkte und "
+                   f"{stellen} Geraete gespeichert.")
 
     class StillerServer(HTTPServer):
         def handle_error(self, anfrage, adresse):

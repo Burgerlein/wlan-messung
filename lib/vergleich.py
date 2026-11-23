@@ -2,6 +2,8 @@
 
 import json
 import statistics
+
+import farbe
 from datetime import datetime
 from pathlib import Path
 
@@ -117,12 +119,22 @@ def text(paare, zus, vorher_zeit, nachher_zeit):
         if p["ap_vorher"] != p["ap_nachher"]:
             kurz = (p["ap_nachher"] or "?").split(" (")[0]
             wechsel = f"  -> {kurz}"
+        delta = f"{p['delta']:>+5d} dB {_pfeil(p['delta'])}"
+        if p["delta"] >= 3:
+            delta = farbe.gut(delta)
+        elif p["delta"] <= -3:
+            delta = farbe.schlecht(delta)
+        else:
+            delta = farbe.leise(delta)
         z.append(
             f"  {ort:<34s} {p['vorher']:>5d} dBm {p['nachher']:>5d} dBm "
-            f"{p['delta']:>+5d} dB {_pfeil(p['delta'])}{wechsel}"
+            f"{delta}{farbe.leise(wechsel)}"
         )
     z.append("")
-    z.append(f"  Im Mittel {zus['mittel']:+.1f} dB ueber {zus['punkte']} Punkte.")
+    mittel = f"{zus['mittel']:+.1f} dB"
+    mittel = (farbe.gut(mittel) if zus["mittel"] >= 3 else
+              farbe.schlecht(mittel) if zus["mittel"] <= -3 else farbe.leise(mittel))
+    z.append(f"  Im Mittel {mittel} ueber {zus['punkte']} Punkte.")
     z.append(f"  Besser: {zus['besser']}   unveraendert: {zus['gleich']}   "
              f"schlechter: {zus['schlechter']}   (ab 3 dB gezaehlt)")
     z.append(f"  Groesster Gewinn {zus['groesster_gewinn']:+d} dB, "

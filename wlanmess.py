@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import bericht
 import fritzbox as fb
 import editor
+import farbe
 import galerie
 import geraete as geraete_modul
 import heatmap
@@ -122,8 +123,9 @@ def diagnose_zeigen(d):
     if d.get("steering_aktiv") is not None:
         zeile("Steuerung", "an" if d["steering_aktiv"] else "aus")
     for modul in d.get("dfs_module") or []:
-        zeile("Radarkanal!", f"{modul['zugangspunkt']} {modul['modul']} auf Kanal "
-                             f"{modul['kanal']}, {modul['geraete']} Geraete")
+        zeile(farbe.schlecht("Radarkanal!"),
+              f"{modul['zugangspunkt']} {modul['modul']} auf Kanal "
+              f"{farbe.schlecht(modul['kanal'])}, {modul['geraete']} Geraete")
 
 
 def zugangspunkt_bestimmen(diagnose, probe):
@@ -213,9 +215,14 @@ def punkt_messen(name, diagnose, ip, dauer_s=15):
 
 def punkt_zeigen(p):
     print()
-    zeile("Signal", f"{p['rssi_mittel']} dBm  ({wlan.rssi_bewertung(p['rssi_mittel'])}, "
+    bewertung = wlan.rssi_bewertung(p["rssi_mittel"])
+    zeile("Signal", f"{farbe.balken(p['rssi_mittel'])}  "
+                    f"{farbe.nach_signal(str(p['rssi_mittel']) + ' dBm', p['rssi_mittel'])}"
+                    f"  ({farbe.nach_bewertung(bewertung, bewertung)}, "
                     f"Schwankung {p['rssi_min']} bis {p['rssi_max']})")
-    zeile("Stoerabstand", f"{p['snr_mittel']} dB  ({wlan.snr_bewertung(p['snr_mittel'])})")
+    snr_wert = wlan.snr_bewertung(p["snr_mittel"])
+    zeile("Stoerabstand", f"{p['snr_mittel']} dB  "
+                          f"({farbe.nach_bewertung(snr_wert, snr_wert)})")
     zeile("Verbindung", f"{p['band']}, Kanal {p['kanal']}, {p['breite']}, "
                         f"{p['tx_rate_mbit']} Mbit/s")
     ap = p.get("zugangspunkt") or (p.get("fritzbox") or {}).get("zugangspunkt")
@@ -223,8 +230,11 @@ def punkt_zeigen(p):
         zeile("Haengt an", ap)
     for feld, bezeichnung in (("funkstrecke", "Bis zur FRITZ!Box"), ("internet", "Bis ins Internet")):
         m = p[feld]
-        zeile(bezeichnung, f"{qualitaet.bewerten(m):<10s} {qualitaet.begruendung(m)}")
-    print(f"\n  >>> Urteil fuer Videoanrufe: {p['bewertung'].upper()}")
+        urteil = qualitaet.bewerten(m)
+        zeile(bezeichnung, f"{farbe.nach_bewertung(f'{urteil:<10s}', urteil)} "
+                           f"{qualitaet.begruendung(m)}")
+    print(f"\n  >>> Urteil fuer Videoanrufe: "
+          f"{farbe.nach_bewertung(p['bewertung'].upper(), p['bewertung'])}")
 
 
 def modus_punktmessung(diagnose, ip):
@@ -331,14 +341,16 @@ def modus_durchlauf(diagnose, ip):
 
                 aktueller_ort = marken[-1]["name"] if marken else "unterwegs"
                 tiefstwert = p["rssi"] if tiefstwert is None else min(tiefstwert, p["rssi"])
+                signal_text = f"{p['rssi']:4d} dBm SNR {p['snr']:3d}"
                 print(
-                    f"\r\033[K  {p['sekunde']:5.0f}s  {p['rssi']:4d} dBm  "
-                    f"SNR {p['snr']:3d}  {p['band']:>6s} K{p['kanal']:<4d} "
-                    f"{p['tx_rate_mbit']:5d} Mbit  "
-                    f"{wlan.ampel(wlan.rssi_bewertung(p['rssi']))}  "
-                    f"| schlechtester hier: {tiefstwert} dBm  | {aktueller_ort}",
-                    end="",
-                    flush=True,
+                    f"\r\033[K  {p['sekunde']:5.0f}s  "
+                    f"{farbe.balken(p['rssi'], 10)} "
+                    f"{farbe.nach_signal(signal_text, p['rssi'])}  "
+                    f"{p['band']:>6s} K{p['kanal']:<4d} {p['tx_rate_mbit']:5d} Mbit  "
+                    f"{farbe.leise('tiefster hier:')} "
+                    f"{farbe.nach_signal(f'{tiefstwert} dBm', tiefstwert)}  "
+                    f"{farbe.leise('|')} {aktueller_ort}",
+                    end="", flush=True,
                 )
     except (KeyboardInterrupt, EOFError):
         pass
@@ -719,8 +731,10 @@ def funkkarte_zeigen(stumm=False):
 
     kopf(f"Schnelluebersicht aus {len(messwerte)} festen Geraeten")
     for m in sorted(messwerte, key=lambda m: m["rssi"]):
-        zeile(m["raum"][:28], f"{m['rssi']:>4d} dBm   {m['band']}, "
-                              f"{m['rate_mbit']} Mbit   {m['zugangspunkt']}", breite=30)
+        wert = farbe.nach_signal(f"{m['rssi']:>4d} dBm", m["rssi"])
+        zeile(m["raum"][:28],
+              f"{farbe.balken(m['rssi'], 10)} {wert}   "
+              f"{m['band']}, {m['rate_mbit']} Mbit   {m['zugangspunkt']}", breite=30)
     if fehlend:
         print("\n  Eingezeichnet, aber gerade nicht verbunden:")
         for name in fehlend:
@@ -1060,9 +1074,10 @@ def main():
     if not lauf["befunde"]:
         print("  Keine Auffaelligkeiten gefunden.")
     for i, b in enumerate(lauf["befunde"], 1):
-        print(f"\n  {i}. [{b['gewicht']}] {b['titel']}")
+        marke = farbe.nach_gewicht(f"[{b['gewicht']}]", b["gewicht"])
+        print(f"\n  {i}. {marke} {farbe.betont(b['titel'])}")
         print(f"     {b['text']}")
-        print(f"     Massnahme: {b['massnahme']}")
+        print(f"     {farbe.leise('Massnahme:')} {b['massnahme']}")
 
     ordner = ERGEBNISSE / datetime.now().strftime("%Y-%m-%d_%H-%M")
     plan = lauf.pop("_plan", None)

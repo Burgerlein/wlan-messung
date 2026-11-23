@@ -305,7 +305,7 @@ def _flaeche(messwerte, b, h):
 # -- Ausgabe -----------------------------------------------------------
 
 
-def _raster(b, h, schritte=10):
+def _gitternetz(b, h, schritte=10):
     """Gitternetz mit beschrifteten Anteilen - hilft beim Eintippen der Raeume."""
     teile = []
     for i in range(schritte + 1):
@@ -325,7 +325,19 @@ def _raster(b, h, schritte=10):
     return "\n".join(teile)
 
 
-def svg(messwerte, plan, deckkraft=0.58, kennung="", mit_raster=False):
+def vorlage_finden():
+    """Ein hinterlegtes Grundriss-Foto zum Abzeichnen, falls vorhanden."""
+    for endung in ("jpg", "jpeg", "png"):
+        pfad = GRUNDRISS / f"vorlage.{endung}"
+        if pfad.exists():
+            art = "png" if endung == "png" else "jpeg"
+            daten = base64.b64encode(pfad.read_bytes()).decode("ascii")
+            return f"data:image/{art};base64,{daten}"
+    return None
+
+
+def svg(messwerte, plan, deckkraft=0.58, kennung="", mit_raster=False,
+        vorlage=None, vorlage_staerke=0.45):
     """kennung macht die internen Bezeichner eindeutig, wenn mehrere
     Grafiken in derselben HTML-Seite liegen."""
     b, h = plan["breite"], plan["hoehe"]
@@ -345,6 +357,11 @@ def svg(messwerte, plan, deckkraft=0.58, kennung="", mit_raster=False):
     )
     maske = f'<clipPath id="{innen}">{kacheln}</clipPath>' 
 
+    vorlagenbild = (
+        f'<image href="{vorlage}" x="0" y="0" width="{b}" height="{h}" '
+        f'opacity="{vorlage_staerke}" preserveAspectRatio="none"/>'
+        if vorlage else ""
+    )
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {b} {h}" \
 font-family="-apple-system, system-ui, sans-serif">
   <defs>
@@ -354,7 +371,8 @@ font-family="-apple-system, system-ui, sans-serif">
     {maske}
   </defs>
   <rect width="{b}" height="{h}" fill="#f8fafc"/>
-  {_raster(b, h) if mit_raster else ""}
+  {vorlagenbild}
+  {_gitternetz(b, h) if mit_raster else ""}
   {_huelle(plan, b, h)}
   {_raeume(plan, b, h)}
   {flaeche}

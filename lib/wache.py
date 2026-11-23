@@ -7,6 +7,7 @@ Ausfaelle des Repeaters, abreissende Kabelverbindungen, Kanalwechsel.
 import time
 from datetime import datetime
 
+import farbe
 import fritzbox as fb
 
 
@@ -117,7 +118,7 @@ def bewachen(box, dauer_s, abstand_s=5, melden=print, mitschrift=None):
     """
     def festhalten(zeitpunkt, meldung):
         protokoll.append((zeitpunkt, meldung))
-        melden(f"  {zeitpunkt}  {meldung}")
+        melden(f"  {farbe.leise(zeitpunkt)}  {_einfaerben(meldung)}")
         if mitschrift is not None:
             with open(mitschrift, 'a', encoding='utf-8') as datei:
                 datei.write(f'- `{zeitpunkt}` {meldung}\n')
@@ -148,6 +149,18 @@ def bewachen(box, dauer_s, abstand_s=5, melden=print, mitschrift=None):
         time.sleep(abstand_s)
 
     return protokoll
+
+
+def _einfaerben(meldung):
+    """Ausfaelle rot, Kanalwechsel gelb, Geraetewanderungen leise."""
+    gross = meldung.upper()
+    if "WEG" in gross or "VERSCHWUNDEN" in gross or "NICHT MEHR" in gross:
+        return farbe.kritisch(meldung)
+    if "KANALWECHSEL" in gross or "wieder" in meldung:
+        return farbe.brauchbar(meldung)
+    if "Geraete" in meldung:
+        return farbe.leise(meldung)
+    return meldung
 
 
 def bericht(protokoll, dauer_s, abstand_s):

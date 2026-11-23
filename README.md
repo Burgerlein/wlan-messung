@@ -14,6 +14,12 @@ Teams-Anrufen, bei denen Speedtest und Signalstärke unauffällig aussahen. Die
 Ursache war am Ende ein Repeater, dessen Netzwerkbuchse alle 40 Sekunden für
 vier Sekunden ausfiel — sichtbar nur, weil durchgehend mitgemessen wurde.
 
+![Heatmap der WLAN-Versorgung auf dem Grundriss](bilder/heatmap.png)
+
+Am Messpunkt steht die Signalstärke, die Fläche dazwischen wird interpoliert.
+Punkte auf einer zweiten Ebene — Hochbett, Galerie — bekommen einen
+gestrichelten Ring, fest installierte Geräte ein Quadrat statt eines Kreises.
+
 ## Was es misst
 
 **Vom Mac**, im Sekundentakt: Signalstärke, Rauschen, Störabstand, Band, Kanal,
@@ -37,6 +43,22 @@ ein Problem im Funk liegt oder dahinter.
 | **Diagnose** | Nur die FRITZ!Box auslesen |
 | **Heatmap** | Geführt Punkt für Punkt, ergibt die Karte |
 | **Schnellblick** | Grobe Karte aus fest installierten Geräten, ohne zu laufen |
+
+So sieht eine Punktmessung aus:
+
+```
+  Signal          ████·······  -71 dBm  (grenzwertig, Schwankung -73 bis -68)
+  Stoerabstand    18 dB  (grenzwertig)
+  Verbindung      5GHz, Kanal 48, 80MHz, 272 Mbit/s
+  Haengt an       fritz-repeater (5 GHz, Kanal 116)
+  Bis zur FRITZ!Box   kritisch   Paketverlust 25.3 % (zu hoch)
+  Bis ins Internet    kritisch   Paketverlust 25.3 % (zu hoch)
+
+  >>> Urteil fuer Videoanrufe: KRITISCH
+```
+
+Grün, gelb und rot richten sich nach den Richtwerten für Videoanrufe. In eine
+Datei umgeleitet bleiben die Farbcodes weg.
 
 Dazu eine **Wache**, die Ausfälle protokolliert, die die FRITZ!Box selbst nicht
 meldet, und ein **Kabeltest** für Netzwerkdosen — mit Kontrollmessung, damit
@@ -87,7 +109,8 @@ Vorgehen, das sich bewährt hat:
 
 1. **Seitenverhältnis festlegen.** `"seitenverhaeltnis": 0.56` heißt, die
    Wohnung ist etwa halb so breit wie lang. Grob schätzen genügt.
-2. **Gitternetz einblenden** und den Browser offen lassen:
+2. **Gitternetz einblenden** und den Browser offen lassen — oder gleich den
+   Editor benutzen, siehe unten:
    ```bash
    python3 wlanmess.py --karte --raster
    open grundriss/messpunkte.html
@@ -110,15 +133,30 @@ Nützliche Zusätze:
 | `dosen` | Netzwerkdosen, als Anhaltspunkt für Repeater-Standorte |
 | `geraete` | Router und Repeater |
 
-### 2. Messpunkte und Geräte setzen
+### Vorlage zum Abzeichnen
+
+Leg ein Foto oder einen Scan deines Grundrisses als **`grundriss/vorlage.jpg`**
+ab (auch `.jpeg` oder `.png`). Der Editor blendet es hinter dem Plan ein, und
+du zeichnest die Räume einfach darüber nach. Das Bild wird nur im Editor
+angezeigt, nie in einer Heatmap — und es bleibt lokal, der Editor läuft auf
+`127.0.0.1`.
+
+### 2. Räume, Messpunkte und Geräte setzen
 
 ```bash
 python3 wlanmess.py --bearbeiten
 ```
 
-Öffnet einen Editor im Browser. Beim ersten Start liegt in jedem Raum
-automatisch ein Raster von Messpunkten — die ziehst du dorthin, wo du
-tatsächlich sitzt, stehst und telefonierst.
+![Grundriss mit nummerierten Messpunkten](bilder/messpunkte.png)
+
+Öffnet einen Editor im Browser mit drei Reitern.
+
+**Räume** — auf freier Fläche aufziehen legt einen Raum an, Ziehen verschiebt
+ihn, an der rechten unteren Ecke ändert sich die Größe. „Nicht zur Wohnung"
+färbt Treppenhäuser grau und nimmt sie aus der Messung.
+
+**Messpunkte** — in jedem Raum liegt automatisch ein Raster. Die ziehst du
+dorthin, wo du tatsächlich sitzt, stehst und telefonierst.
 
 - **Ziehen** verschiebt, **Doppelklick** legt einen neuen Punkt an,
   **Entf** löscht
