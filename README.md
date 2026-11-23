@@ -245,17 +245,43 @@ Gespeichert wird direkt in `plan.json`.
 
 ### 3. Später etwas ändern
 
-Verschiebst du Messpunkte nach einer Messung, passen alte Ergebnisse nicht
-mehr zu den neuen Positionen. Dafür gibt es:
+**Am Plan zu arbeiten ist gefahrlos.** Jede Messung speichert den Grundriss
+mit, der zum Zeitpunkt der Messung galt. Räume verschieben, Punkte löschen,
+die ganze Wohnung umbauen — alte Messungen zeigen weiterhin ihren eigenen
+Stand und bleiben unverändert.
+
+Das heißt aber auch: Sie liegen dann auf einem anderen Raster als neue
+Messungen und lassen sich nicht mehr Punkt für Punkt vergleichen. Dafür gibt
+es:
 
 ```bash
 python3 wlanmess.py --umhaengen messungen/<ordner>
 ```
 
-Das ordnet jeden alten Messwert wieder dem richtigen Punkt zu — zuerst über
-den Namen, dann über die Entfernung. Was zu weit gewandert ist, bleibt
-unzugeordnet und wird genannt, statt stillschweigend falsch übernommen zu
-werden. Das Original wird vorher gesichert.
+Das ordnet jeden alten Messwert dem passenden Punkt der neuen Anordnung zu —
+zuerst über den Namen, dann über die Entfernung. Was weiter als etwa einen
+Meter gewandert ist, bleibt unzugeordnet und wird genannt, statt
+stillschweigend falsch übernommen zu werden.
+
+**Was dabei mit den Daten passiert:**
+
+| | |
+|---|---|
+| Punkt nur verschoben | Messwert wandert mit, bleibt erhalten |
+| Punkt umbenannt | wird über die Entfernung wiedergefunden |
+| Punkt gelöscht | Messwert fällt aus `messung.json` heraus |
+| Punkt neu angelegt | bleibt leer, bis du dort misst |
+
+`--umhaengen` schreibt direkt in `messung.json`. Vorher legt es einmalig
+`messung-original.json` daneben — und überschreibt diese Sicherung nie, auch
+bei mehrfachem Umhängen nicht. Zurück geht es mit:
+
+```bash
+python3 wlanmess.py --zuruecksetzen messungen/<ordner>
+```
+
+Es geht also nichts verloren, solange du den Messordner nicht von Hand
+aufräumst.
 
 ## Alle Aufrufe
 
@@ -271,9 +297,23 @@ python3 wlanmess.py --leitung [min]      # eigene Leitung zur FRITZ!Box messen
 python3 wlanmess.py --vergleich <a> <b>  # zwei Messungen gegenüberstellen
 python3 wlanmess.py --uebersicht         # Vergleichsseite für alle Rundgänge
 python3 wlanmess.py --umhaengen <ordner> # Messung auf geänderte Punkte legen
+python3 wlanmess.py --zuruecksetzen <o>  # Umhängen rückgängig machen
 python3 wlanmess.py --neu <ordner>       # Messung neu auswerten
 python3 wlanmess.py --standort           # Ortungsfreigabe anfordern
 ```
+
+## Was noch kommt
+
+- **Die Weboberflächen verständlicher machen.** Editor und Vergleichsseite
+  funktionieren, erklären sich aber noch zu wenig von selbst — bessere
+  Beschriftungen, sichtbarere Werkzeuge, eine kurze Einführung beim ersten
+  Öffnen.
+- **Grundriss maßstäblich.** Derzeit sind alle Angaben Anteile von 0 bis 1.
+  Mit echten Metern ließe sich die Dämpfung pro Wand abschätzen.
+- **Mehrere Etagen.** Eine zweite Ebene lässt sich markieren, aber nicht als
+  eigener Grundriss führen.
+- **Empfehlung für den Repeater-Standort** aus den Messdaten berechnen,
+  statt sie von Hand abzulesen.
 
 ## Was es nicht kann
 

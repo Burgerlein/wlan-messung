@@ -972,6 +972,24 @@ def main():
         return kabeltest_zeigen(name, float(zahlen[0]) if zahlen else 10.0)
     if "--funkkarte" in sys.argv:
         return funkkarte_zeigen()
+    if "--zuruecksetzen" in sys.argv:
+        stelle = sys.argv.index("--zuruecksetzen")
+        if len(sys.argv) <= stelle + 1:
+            print("  Aufruf: wlanmess.py --zuruecksetzen <Messordner>")
+            return 1
+        ordner = sys.argv[stelle + 1]
+        ergebnis = umhaengen_modul.zuruecknehmen(ordner)
+        kopf("Umhaengen zuruecknehmen")
+        if ergebnis is None:
+            print(f"  Keine Sicherung in {ordner} - die Messung wurde nie umgehaengt.")
+            return 1
+        vorher, nachher = ergebnis
+        zeile("Wiederhergestellt", f"{nachher} Messwerte (waren zuletzt {vorher})")
+        zeile("Sicherung", "nicht mehr noetig, entfernt")
+        laeufe, uebersprungen = galerie.laeufe_sammeln()
+        zeile("Vergleichsseite", galerie.bauen(
+            laeufe, ERGEBNISSE / "uebersicht.html", uebersprungen))
+        return 0
     if "--bearbeiten" in sys.argv:
         kopf("Messpunkte bearbeiten")
         print("  Ziehen verschiebt, Doppelklick legt neu an, Entf loescht.")

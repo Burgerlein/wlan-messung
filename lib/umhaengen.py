@@ -101,3 +101,18 @@ def anwenden(ordner, plan, hoechstabstand=HOECHSTABSTAND, melden=print):
     }
     datei.write_text(json.dumps(lauf, indent=2, ensure_ascii=False), encoding="utf-8")
     return treffer, verwaist, ohne, sicherung
+
+
+def zuruecknehmen(ordner):
+    """Stellt den Stand vor dem ersten Umhaengen wieder her."""
+    ordner = Path(ordner)
+    sicherung = ordner / "messung-original.json"
+    datei = ordner / "messung.json"
+    if not sicherung.exists():
+        return None
+    vorher = len(json.loads(datei.read_text(encoding="utf-8")).get("messwerte") or [])
+    original = json.loads(sicherung.read_text(encoding="utf-8"))
+    datei.write_text(json.dumps(original, indent=2, ensure_ascii=False),
+                     encoding="utf-8")
+    sicherung.unlink()
+    return vorher, len(original.get("messwerte") or [])
